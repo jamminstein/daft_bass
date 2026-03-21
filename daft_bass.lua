@@ -9,6 +9,13 @@
 engine.name = 'MollyThePoly'
 
 local midi_out
+local opxy_out = nil
+local function opxy_note_on(note, vel)
+  if opxy_out then opxy_out:note_on(note, vel, params:get("opxy_channel")) end
+end
+local function opxy_note_off(note)
+  if opxy_out then opxy_out:note_off(note, 0, params:get("opxy_channel")) end
+end
 local playing   = false
 local step      = 1
 local clock_id  = nil
@@ -347,6 +354,7 @@ local function all_notes_off()
       midi_out:cc(123, 0, ch) -- all notes off
     end
   end
+  if opxy_out then opxy_out:cc(123, 0, params:get("opxy_channel")) end
 end
 
 -- Set MollyThePoly to a deep, punchy bass voice
@@ -465,6 +473,12 @@ local function send_note(note, vel, gate_beats)
       midi_out:note_off(n, 0, ch)
     end)
   end
+  -- ── OP-XY out ──
+  opxy_note_on(n, vel)
+  clock.run(function()
+    clock.sync(gate_beats)
+    opxy_note_off(n)
+  end)
 end
 
 local function step_seq()
@@ -521,12 +535,20 @@ function init()
     midi_out = midi.connect(v)
   end)
 
+  params:add_separator("OP-XY")
+  params:add_number("opxy_device","OP-XY MIDI Device",1,4,2)
+  params:set_action("opxy_device",function(v)
+    opxy_out=midi.connect(v)
+  end)
+  params:add_number("opxy_channel","OP-XY MIDI Channel",1,16,1)
+
   params:add_separator("PLAYBACK")
   params:add_number("velocity", "Velocity",     1,  127, 100)
   params:add_number("gate",     "Gate %",       10, 100, 80)
   params:add_number("swing",    "Swing %",      0,  100, 0)
 
   midi_out = midi.connect(params:get("midi_dev"))
+  opxy_out = midi.connect(params:get("opxy_device"))
   params:set("clock_tempo", bpm)
   copy_line(selected)
   init_synth_voice()
