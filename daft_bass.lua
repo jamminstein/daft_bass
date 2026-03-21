@@ -343,8 +343,8 @@ local function all_notes_off()
   engine.noteOffAll()
   if midi_out then
     local ch = params:get("midi_ch")
-    for i = 0, 127 do
-      midi_out:note_off(i, 0, ch)
+    for ch = 1, 16 do
+      midi_out:cc(123, 0, ch) -- all notes off
     end
   end
 end
@@ -474,7 +474,7 @@ local function step_seq()
     local swing = params:get("swing")
     if step % 2 == 0 and swing > 0 then
       -- convert beat fraction to seconds for clock.sleep
-      clock.sleep((1 / 4) * (swing / 200) * clock.get_beat_sec())
+      clock.sleep((1 / 4) * (swing / 200) * (60 / clock.tempo))
     end
 
     local note = modified[step]
