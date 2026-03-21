@@ -340,7 +340,7 @@ local function copy_line(idx)
 end
 
 local function all_notes_off()
-  engine.noteOffAll()
+  engine.noteKillAll()
   if midi_out then
     local ch = params:get("midi_ch")
     for ch = 1, 16 do
